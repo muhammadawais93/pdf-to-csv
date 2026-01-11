@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    // Project Structure
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    // Module System
+    "module": "commonjs",
+    "target": "esnext",
+
+    // Type Checking
+    "strict": true,
+    "skipLibCheck": true,
+
+    // Emit Options
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    // Module Compatibility
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "verbatimModuleSyntax": false,
+    
+    // Safety & Best Practices
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force"
+  }
+}
