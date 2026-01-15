@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { extractTextFromPDF } from '../extract/pdfText';
 import { parseBrokerPDFData } from '../parse/broker.parser';
 import { normalizeTransactions } from '../normalize/normalizeTransactions';
+import { writeCSVFile } from '../output/csvWriter';
 
 const program = new Command();
 
@@ -17,15 +18,36 @@ program.command('convert')
   .option('-o, --output <path>', 'Output CSV path (default: ./output.csv)')
   .option('--debug', 'Output raw parsed data for debugging')
   .action(async (options) => {
-    const text = await extractTextFromPDF(options.input);
-    const transactions = parseBrokerPDFData(text, options.debug);
+    try {
+      console.log(`📄 Reading PDF from: ${options.input}\n`);
+      const text = await extractTextFromPDF(options.input);
+      
+      console.log(`🔍 Parsing transactions...\n`);
+      const transactions = parseBrokerPDFData(text, options.debug);
 
-    if (transactions.length === 0) {
-      console.log('No transactions found to process.');
-      return;
+      if (transactions.length === 0) {
+        console.warn('⚠️  No transactions found to process.');
+        process.exit(1);
+      }
+      
+      const normalizedTransactions = normalizeTransactions(transactions);
+      
+      if (normalizedTransactions.length === 0) {
+        console.error('❌ No valid transactions after validation.');
+        process.exit(1);
+      }
+      
+      const outputPath = options.output || './output.csv';
+      await writeCSVFile(normalizedTransactions, outputPath);
+      
+      console.log('✅ Conversion completed successfully!');
+    } catch (error: any) {
+      console.error('❌ Error:', error.message);
+      if (options.debug) {
+        console.error(error);
+      }
+      process.exit(1);
     }
-    
-    const normalizedTransactions = normalizeTransactions(transactions);
   });
 
 program.parse();

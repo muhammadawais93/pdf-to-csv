@@ -2,7 +2,10 @@
   "name": "pdf-to-csv",
   "version": "1.0.0",
   "description": "Cli base script that convert pdf to csv",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "bin": {
+    "pdf-to-csv": "./dist/index.js"
+  },
   "scripts": {
     "dev": "nodemon",
     "clean": "rm -rf dist",
