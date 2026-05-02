@@ -20,3 +20,21 @@ export async function extractTextFromPDF(filePath: string): Promise<string> {
     }
   }
 }
+
+export async function extractTablesFromPDF(filePath: string): Promise<string[][][]> {
+  const absolutePath = path.resolve(filePath);
+  const dataBuffer = await fs.readFile(absolutePath);
+
+  const parser = new PDFParse({ data: dataBuffer });
+  const result = await parser.getTable();
+  await parser.destroy();
+
+  // Flatten all tables from all pages into one list of tables (each table is string[][])
+  const allTables: string[][][] = [];
+  for (const page of result.pages) {
+    for (const table of page.tables) {
+      allTables.push(table as string[][]);
+    }
+  }
+  return allTables;
+}
