@@ -1,11 +1,12 @@
 # PDF to CSV Converter
 
-A powerful CLI tool to convert broker statement PDFs into structured CSV files for easy analysis and record-keeping.
+A powerful CLI tool to convert broker and mutual fund statement PDFs into structured CSV files for easy analysis and record-keeping.
 
 ## 🚀 Features
 
 - **PDF Text Extraction**: Automatically extracts transaction data from broker statement PDFs
 - **Smart Parsing**: Uses regex patterns to identify and parse transaction records
+- **Mutual Fund Parsing**: Parses mutual fund table-based statements with section-aware fund mapping
 - **Data Validation**: Validates transactions using Zod schema for data integrity
 - **CSV Export**: Outputs clean, normalized CSV files
 - **Debug Mode**: Includes debugging capabilities for troubleshooting
@@ -51,6 +52,12 @@ npm install -g .
 pdf-to-csv convert -i <pdf-file-path> -b <broker-type>
 ```
 
+### Mutual Fund Command
+
+```bash
+pdf-to-csv mutual -i <pdf-file-path> -o <output-csv-path>
+```
+
 ### Options
 
 | Option | Alias | Required | Description | Default |
@@ -59,6 +66,11 @@ pdf-to-csv convert -i <pdf-file-path> -b <broker-type>
 | `--broker` | `-b` | Yes | Broker type (interactive_brokers, IBKR, etc.) | - |
 | `--output` | `-o` | No | Output CSV file path | `./output.csv` |
 | `--debug` | - | No | Enable debug mode to see raw parsed data | `false` |
+
+Notes:
+- `convert` command requires `--broker`.
+- `mutual` command does not use `--broker`.
+- `mutual` default output is `./mutual-output.csv` when `--output` is not provided.
 
 ### Examples
 
@@ -76,6 +88,29 @@ pdf-to-csv convert -i ./statements/january_2026.pdf -b IBKR -o ./reports/january
 ```bash
 pdf-to-csv convert -i ./statements/january_2026.pdf -b interactive_brokers --debug
 ```
+
+#### Mutual Fund Conversion
+```bash
+pdf-to-csv mutual -i ./statements/mutual_statement.pdf -o ./reports/mutual.csv
+```
+
+#### Mutual Fund Conversion (Local Absolute Path Example)
+```bash
+pdf-to-csv mutual -i /Users/john.doe/Downloads/portfolio-statement-2026-05-02.pdf -o /Users/john.doe/Downloads/mutual.csv
+```
+
+#### Mutual Fund Debug Mode
+```bash
+pdf-to-csv mutual -i ./statements/mutual_statement.pdf -o ./reports/mutual.csv --debug
+```
+
+## 🧾 Mutual Fund Notes
+
+- The mutual parser supports both extracted table formats:
+	- Standard 11-column transaction rows (fund name comes from current section)
+	- Mahana Munafa style rows where fund name is present in the row itself
+- Fund section headers are recognized from both single-cell headings and padded multi-column rows.
+- This avoids stale fund carry-over between sections (for example stock fund rows incorrectly assigned to sovereign/cash/energy sections).
 
 ## 📊 Expected PDF Format
 
@@ -112,13 +147,17 @@ pdf-to-csv/
 │   ├── extract/          # PDF extraction
 │   │   └── pdfText.ts    # PDF text extraction logic
 │   ├── parse/            # Data parsing
-│   │   └── broker.parser.ts  # Transaction parsing
+│   │   ├── broker.parser.ts  # Broker transaction parsing
+│   │   └── mutual.parser.ts  # Mutual fund table parsing
 │   ├── normalize/        # Data normalization
-│   │   └── normalizeTransactions.ts
+│   │   ├── normalizeTransactions.ts
+│   │   └── normalizeMutualTransactions.ts
 │   ├── output/           # CSV output
-│   │   └── csvWriter.ts  # CSV file writer
+│   │   ├── csvWriter.ts  # Broker CSV writer
+│   │   └── mutualCsvWriter.ts  # Mutual fund CSV writer
 │   ├── schema/           # Data validation
-│   │   └── transaction.schema.ts  # Zod schema
+│   │   ├── transaction.schema.ts  # Broker Zod schema
+│   │   └── mutual-transaction.schema.ts  # Mutual fund Zod schema
 │   └── index.ts          # Entry point
 ├── package.json
 ├── tsconfig.json
@@ -159,6 +198,8 @@ node dist/index.js convert -i example.pdf -b interactive_brokers
 4. **Validation**: Validates parsed data against Zod schema
 5. **Normalization**: Normalizes and cleans transaction data
 6. **CSV Generation**: Writes validated transactions to CSV file
+
+For mutual statements, table rows are extracted with `pdf-parse#getTable()`, then section headers and transaction rows are classified to map each transaction to the correct fund.
 
 ## 🛠️ Technologies
 
