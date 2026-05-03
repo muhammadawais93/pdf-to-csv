@@ -77,13 +77,12 @@ export function parseMutualTableData(tables: string[][][], debug = false): Mutua
     let currentFund = '';
 
     for (const row of table) {
-      // --- Section header row (1 cell) ---
-      if (row.length === 1) {
-        const fund = extractFundName(row[0]);
-        if (fund) {
-          currentFund = fund;
-          if (debug) console.log(`\n📁 Fund section: ${currentFund}`);
-        }
+      // Fund section headers can be extracted as a single cell or as a padded 11-cell row.
+      const firstCell = (row[0] ?? '').trim();
+      const sectionFund = extractFundName(firstCell);
+      if (sectionFund && !DATE_PATTERN.test(firstCell)) {
+        currentFund = sectionFund;
+        if (debug) console.log(`\n📁 Fund section: ${currentFund}`);
         continue;
       }
 
@@ -109,9 +108,8 @@ export function parseMutualTableData(tables: string[][][], debug = false): Mutua
       let openingUnits: number;
 
       if (isFormatB) {
-        console.log(`\n🔍 Detected Format B (fund name in row) for row: ${JSON.stringify(row)}`);
         // Format B: [date, navDate, fundName, type, gross, load, charges, cgt, net, nav, units]
-        ledgerDate = c1; // Use NAV date (DD-MMM-YYYY) — more precise
+        ledgerDate = c0; // Use NAV date (DD-MMM-YYYY) — more precise
         fundName = extractFundName(c2) ?? c2;
         transactionType = c3;
         gross = cleanNumber(c4);
@@ -126,8 +124,12 @@ export function parseMutualTableData(tables: string[][][], debug = false): Mutua
       } else {
         // Format A: [ledgerDate, navDate, type, gross, load, charges, cgt, net, nav, units, closingBalance]
         if (!DATE_PATTERN.test(c0.trim())) continue; // Skip non-transaction rows (footers, summaries)
+        if (!currentFund) {
+          if (debug) console.warn(`⚠️  Skipping row — no active fund section: ${JSON.stringify(row)}`);
+          continue;
+        }
 
-        ledgerDate = c1; // Use NAV date (DD-MMM-YYYY) — more precise
+        ledgerDate = c0; // Use NAV date (DD-MMM-YYYY) — more precise
         fundName = currentFund;
         transactionType = c2;
         gross = cleanNumber(c3);
