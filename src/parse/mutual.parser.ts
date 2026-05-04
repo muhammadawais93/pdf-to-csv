@@ -43,19 +43,29 @@ function mapType(rawType: string): string {
 }
 
 const KNOWN_FUND_NAMES = [
-  'AL-AMEEN SHARIAH STOCK FUND',
-  'AL-AMEEN ISLAMIC SOVEREIGN FUND',
-  'AL-AMEEN ISLAMIC CASH FUND',
-  'AL-AMEEN ISLAMIC ASSET ALLOCATION FUND',
-  'AL AMEEN ISLAMIC INCOME FUND',
-  'AL-AMEEN ISLAMIC ENERGY FUND',
-  'AL-AMEEN ISLAMIC MAHANA MUNAFA PLAN',
+  'Al Ameen Islamic Aggressive Income Fund',
+  'Al Ameen Islamic Aggressive Income Plan I',
+  'Al Ameen Islamic Asset Allocation Fund',
+  'Al Ameen Islamic Cash Fund',
+  'Al Ameen Islamic Cash Plan I',
+  'Al Ameen Islamic Energy Fund',
+  'Al Ameen Islamic Income Fund',
+  'Al Ameen Islamic Sovereign Fund',
+  'Al Ameen Shariah Stock Fund',
+  // Defunct fund - kept for parsing historical statements
+  'Al Ameen Islamic Mahana Munafa Plan',
 ];
 
 function extractFundName(cellText: string): string | null {
-  const upper = cellText.toUpperCase();
+  // Normalize: uppercase, remove hyphens, collapse whitespace
+  const normalize = (text: string) => 
+    text.toUpperCase().replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+  
+  const normalizedCell = normalize(cellText);
+  
   for (const name of KNOWN_FUND_NAMES) {
-    if (upper.includes(name.toUpperCase())) return name;
+    const normalizedName = normalize(name);
+    if (normalizedCell.includes(normalizedName)) return name;
   }
   return null;
 }
